@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#04060c" />
+    <meta name="description" content="Chronoterra — an interactive globe of empires, kingdoms and peoples across 125,000 years." />
+    <title>Chronoterra — An Atlas of Empires</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303040a' stroke='%23e8c98a' stroke-width='2'/%3E%3Cpath d='M32 14 50 32 32 50 14 32Z' fill='none' stroke='%23e8c98a' stroke-width='3'/%3E%3Cpath d='M32 24 40 32 32 40 24 32Z' fill='%23e8c98a'/%3E%3C/svg%3E"
+    />
+    <link rel="preload" href="/fonts/CormorantGaramond-normal-1.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Inter-normal-2.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />
+    <link rel="dns-prefetch" href="https://en.wikipedia.org" />
+    <link rel="dns-prefetch" href="https://upload.wikimedia.org" />
+    <link rel="preload" href="/data/index.json" as="fetch" crossorigin="anonymous" />
+    <script>
+      // Start downloading the first era's borders in parallel with the app bundle.
+      (function () {
+        var y = location.hash.slice(1);
+        if (!/^-?\d+$/.test(y)) y = '100';
+        var key = y === '2024' ? 'today' : +y < 0 ? 'bc' + -y : y;
+        var link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'fetch';
+        link.crossOrigin = 'anonymous';
+        link.href = '/data/world_' + key + '.topo.json';
+        document.head.appendChild(link);
+      })();
+    </script>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="intro-open">
+    <div class="globe-placeholder" aria-hidden="true"></div>
+    <div id="globe"></div>
+    <div class="vignette"></div>
+
+    <section class="intro" id="intro">
+      <div class="intro-inner">
+        <div class="intro-mark">◈</div>
+        <div class="intro-kicker">An atlas of empires</div>
+        <h1>Chronoterra</h1>
+        <p class="intro-tag">125,000 years of empires, kingdoms and peoples — on one living globe.</p>
+        <div class="intro-stats">
+          <div><b>55</b><span>moments in time</span></div>
+          <div><b>3,000+</b><span>realms charted</span></div>
+          <div><b>160+</b><span>curated facts</span></div>
+        </div>
+        <div class="intro-actions">
+          <button class="btn-primary" id="begin">Begin the journey <small>♫ with music</small></button>
+          <button class="btn-ghost" id="begin-silent">Enter in silence</button>
+        </div>
+        <p class="intro-hint">Best experienced with headphones</p>
+      </div>
+    </section>
+
+    <div class="ui" id="ui">
+      <header class="brand">
+        <div class="brand-mark">◈</div>
+        <div>
+          <h1>Chronoterra</h1>
+          <p>An atlas of empires across time</p>
+        </div>
+      </header>
+
+      <section class="era-display" id="era-display">
+        <div class="era-age" id="era-age"></div>
+        <div class="era-year" id="era-year"></div>
+        <div class="era-caption" id="era-caption"></div>
+        <div class="loader" id="loader"><span></span>Charting borders…</div>
+      </section>
+
+      <nav class="toolbar">
+        <div class="segmented" id="style-switch" title="Map style">
+          <button data-style="satellite">Satellite</button>
+          <button data-style="terrain">Terrain</button>
+          <button data-style="atlas">Atlas</button>
+        </div>
+        <div class="segmented" id="mode-switch" title="Colour realms by">
+          <button data-mode="realms">Realms</button>
+          <button data-mode="empires">Empires</button>
+        </div>
+        <button class="icon-btn sound" id="sound" title="Music (M)">
+          <span class="bars"><i></i><i></i><i></i><i></i></span>
+        </button>
+        <button class="icon-btn" id="help-btn" title="Shortcuts (?)">?</button>
+      </nav>
+
+      <aside class="panel powers" id="powers">
+        <div class="search">
+          <span>⌕</span>
+          <input id="search" type="text" placeholder="Search realms in this era…" autocomplete="off" />
+        </div>
+        <h3><span id="powers-title">Great powers of the age</span><em id="powers-count"></em></h3>
+        <ol id="powers-list"></ol>
+      </aside>
+
+      <aside class="panel info" id="info">
+        <button class="close" id="info-close" aria-label="Close">×</button>
+        <div class="info-swatch" id="info-swatch"></div>
+        <div class="info-kicker" id="info-kicker"></div>
+        <h2 id="info-name"></h2>
+        <div class="info-stats" id="info-stats"></div>
+        <div class="info-img-wrap"><img id="info-img" alt="" /></div>
+        <p id="info-extract"></p>
+        <button class="btn-primary wide" id="open-chronicle">Open the full chronicle →</button>
+      </aside>
+
+      <aside class="facts" id="facts">
+        <div class="facts-head">
+          <span>✦ Did you know?</span>
+          <div class="facts-nav">
+            <button id="fact-prev" aria-label="Previous fact">‹</button>
+            <span id="fact-dots"></span>
+            <button id="fact-next" aria-label="Next fact">›</button>
+          </div>
+        </div>
+        <p id="fact-text"></p>
+      </aside>
+
+      <div class="controls">
+        <button id="powers-toggle" class="mobile-only" title="Realms">☰</button>
+        <button id="zoom-in" title="Zoom in">+</button>
+        <button id="zoom-out" title="Zoom out">−</button>
+        <button id="rotate" title="Auto-rotate (R)" class="active">⟳</button>
+        <button id="labels" title="Labels (L)" class="active">Aa</button>
+      </div>
+
+      <footer class="timeline">
+        <div class="ages" id="ages"></div>
+        <div class="track-row">
+          <button class="nav-btn" id="prev" title="Previous era (←)">‹</button>
+          <button class="play" id="play" title="Play through history (Space)">▶</button>
+          <div class="track" id="track">
+            <div class="track-fill" id="track-fill"></div>
+            <div class="ticks" id="ticks"></div>
+            <div class="thumb" id="thumb"></div>
+            <div class="track-tip" id="track-tip"><b></b><span></span></div>
+          </div>
+          <button class="nav-btn" id="next" title="Next era (→)">›</button>
+        </div>
+        <div class="hint">Drag to rotate · scroll to zoom · click a realm · double-click to open its chronicle</div>
+      </footer>
+
+      <div class="credits" id="credits"></div>
+    </div>
+
+    <section class="chronicle" id="chronicle" aria-hidden="true">
+      <button class="chronicle-close" id="chronicle-close" aria-label="Close chronicle">×</button>
+      <div class="chronicle-scroll" id="chronicle-scroll"></div>
+    </section>
+
+    <div class="lightbox" id="lightbox">
+      <img id="lightbox-img" alt="" />
+      <p id="lightbox-caption"></p>
+    </div>
+
+    <div class="help" id="help">
+      <h4>Shortcuts</h4>
+      <dl>
+        <dt>← →</dt><dd>Travel between eras</dd>
+        <dt>Space</dt><dd>Play / pause history</dd>
+        <dt>Enter</dt><dd>Open chronicle of selected realm</dd>
+        <dt>Esc</dt><dd>Close / deselect</dd>
+        <dt>M</dt><dd>Toggle music</dd>
+        <dt>L</dt><dd>Toggle labels</dd>
+        <dt>R</dt><dd>Toggle rotation</dd>
+        <dt>/</dt><dd>Search realms</dd>
+      </dl>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
