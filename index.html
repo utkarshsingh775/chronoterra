@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#04060c" />
-    <meta name="description" content="Chronoterra — an interactive globe of empires, kingdoms and peoples across 125,000 years." />
-    <title>Chronoterra — An Atlas of Empires</title>
+    <meta name="description" content="Age of Empires: an interactive globe from the Big Bang to today, tracing continents, empires and peoples, with a guided journey through India’s history." />
+    <title>Age of Empires · An Interactive Atlas of History</title>
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303040a' stroke='%23e8c98a' stroke-width='2'/%3E%3Cpath d='M32 14 50 32 32 50 14 32Z' fill='none' stroke='%23e8c98a' stroke-width='3'/%3E%3Cpath d='M32 24 40 32 32 40 24 32Z' fill='%23e8c98a'/%3E%3C/svg%3E"
@@ -13,6 +13,7 @@
     <link rel="preload" href="/fonts/CormorantGaramond-normal-1.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Inter-normal-2.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />
+    <link rel="preload" href="/intro/taj.jpg" as="image" />
     <link rel="dns-prefetch" href="https://en.wikipedia.org" />
     <link rel="dns-prefetch" href="https://upload.wikimedia.org" />
     <link rel="preload" href="/data/index.json" as="fetch" crossorigin="anonymous" />
@@ -38,29 +39,35 @@
     <div class="vignette"></div>
 
     <section class="intro" id="intro">
+      <div class="intro-art" aria-hidden="true"><div class="intro-slide"></div><div class="intro-slide"></div></div>
       <div class="intro-inner">
         <div class="intro-mark">◈</div>
         <div class="intro-kicker">An atlas of empires</div>
-        <h1>Chronoterra</h1>
-        <p class="intro-tag">125,000 years of empires, kingdoms and peoples — on one living globe.</p>
+        <h1>Age of Empires</h1>
+        <p class="intro-tag">From the Big Bang to today: continents, empires and peoples, on one living globe.</p>
         <div class="intro-stats">
-          <div><b>55</b><span>moments in time</span></div>
+          <div><b>69</b><span>moments in time</span></div>
           <div><b>3,000+</b><span>realms charted</span></div>
-          <div><b>160+</b><span>curated facts</span></div>
+          <div><b>200+</b><span>curated facts</span></div>
         </div>
         <div class="intro-actions">
           <button class="btn-primary" id="begin">Begin the journey <small>♫ with music</small></button>
           <button class="btn-ghost" id="begin-silent">Enter in silence</button>
         </div>
+        <p class="intro-note">
+          Most of us never explore another country’s past, often because we don’t even know what to ask.
+          Pick any moment, click anything, and let curiosity take over.
+        </p>
         <p class="intro-hint">Best experienced with headphones</p>
       </div>
+      <p class="intro-caption" id="intro-caption"></p>
     </section>
 
     <div class="ui" id="ui">
       <header class="brand">
         <div class="brand-mark">◈</div>
         <div>
-          <h1>Chronoterra</h1>
+          <h1>Age of Empires</h1>
           <p>An atlas of empires across time</p>
         </div>
       </header>
@@ -73,11 +80,7 @@
       </section>
 
       <nav class="toolbar">
-        <div class="segmented" id="style-switch" title="Map style">
-          <button data-style="satellite">Satellite</button>
-          <button data-style="terrain">Terrain</button>
-          <button data-style="atlas">Atlas</button>
-        </div>
+        <button class="india-btn" id="india-btn" title="India through time (I)">India</button>
         <div class="segmented" id="mode-switch" title="Colour realms by">
           <button data-mode="realms">Realms</button>
           <button data-mode="empires">Empires</button>
@@ -95,6 +98,25 @@
         </div>
         <h3><span id="powers-title">Great powers of the age</span><em id="powers-count"></em></h3>
         <ol id="powers-list"></ol>
+      </aside>
+
+      <aside class="panel india" id="india" aria-label="India through time">
+        <header class="india-head">
+          <div>
+            <div class="india-kicker">A journey through</div>
+            <h2>India</h2>
+            <p>5,000 years in 16 chapters. Pick one to travel there.</p>
+          </div>
+          <button class="close" id="india-close" aria-label="Close">×</button>
+        </header>
+        <ol class="india-list" id="india-list"></ol>
+        <footer class="india-nav">
+          <button id="india-prev" aria-label="Previous chapter">‹</button>
+          <span id="india-progress"></span>
+          <button id="india-play" class="india-play">▶ Play story</button>
+          <button id="india-next" aria-label="Next chapter">›</button>
+        </footer>
+        <p class="india-map-note">Modern borders follow the official map of India.</p>
       </aside>
 
       <aside class="panel info" id="info">
@@ -168,6 +190,7 @@
         <dt>L</dt><dd>Toggle labels</dd>
         <dt>R</dt><dd>Toggle rotation</dd>
         <dt>/</dt><dd>Search realms</dd>
+        <dt>I</dt><dd>India through time</dd>
       </dl>
     </div>
 

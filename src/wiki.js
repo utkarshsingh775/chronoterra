@@ -23,6 +23,7 @@ const OVERRIDES = {
 };
 
 const json = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))));
+const undash = (s) => (typeof s === 'string' ? s.replace(/\s*—\s*/g, ', ') : s);
 const cache = new Map();
 
 async function findTitle(name, year) {
@@ -83,7 +84,7 @@ async function loadGallery(title) {
       .filter((m) => m.type === 'image' && m.showInGallery && m.srcset?.length)
       .map((m) => ({
         src: `https:${m.srcset[m.srcset.length - 1].src}`,
-        caption: m.caption?.text || m.title.replace(/^File:|\.\w+$/g, '').replace(/_/g, ' '),
+        caption: undash(m.caption?.text || m.title.replace(/^File:|\.\w+$/g, '').replace(/_/g, ' ')),
       }))
       .slice(0, 12);
   } catch {
@@ -103,7 +104,11 @@ export function fetchChronicle(name, year) {
         loadGallery(title),
       ]);
       const page = Object.values(full.query?.pages || {})[0];
-      const sections = parseSections(page?.extract || '');
+      const sections = parseSections(undash(page?.extract || ''));
+      if (summary) {
+        summary.extract = undash(summary.extract);
+        summary.description = undash(summary.description);
+      }
       return {
         title,
         summary,

@@ -8,53 +8,43 @@ import {
   Points,
   PointsMaterial,
   SphereGeometry,
+  Texture,
   TextureLoader,
   SRGBColorSpace,
 } from 'three';
-import { ERAS, AGES, ageOf, formatYear, dataUrl } from './eras.js';
+import { ERAS, AGES, ageOf, formatYear, shortYear, dataUrl } from './eras.js';
 import { loadEra, loadIndex, fmtArea } from './data.js';
 import { fetchChronicle } from './wiki.js';
 import { createAmbience } from './audio.js';
 import { createChronicle } from './chronicle.js';
+import { INDIA_CHAPTERS, INDIA_VIEW, inIndiaRegion } from './india.js';
 
-const TICK_LABELS = new Set([-10000, -3000, -1000, -323, -1, 400, 800, 1200, 1492, 1700, 1815, 1914, 1960, 2024]);
+const TICK_LABELS = new Set([
+  -13_800_000_000, -600_000_000, -66_000_000,
+  -10000, -3000, -323, 400, 1200, 1492, 1815, 1914, 2024,
+]);
+
+// Deep-time moments have no satellite map, so the globe becomes a plain world of the right colour.
+const SCENES = {
+  bigbang: { globe: '#ffeccb', atmosphere: '#ffc06a' },
+  molten: { globe: '#41120a', atmosphere: '#ff8a4c' },
+  moon: { globe: '#5a1f0d', atmosphere: '#ffb072' },
+  ocean: { globe: '#0d2a4a', atmosphere: '#7fd4ff' },
+  oxygen: { globe: '#0e3350', atmosphere: '#9be7c4' },
+  paleo: { globe: '#0b2742', atmosphere: '#8fb8ff', land: '#c8b487' },
+};
 const PLAY_INTERVAL_MS = 5200;
 const FACT_INTERVAL_MS = 9000;
 
-const STYLES = {
-  satellite: {
-    tiles: (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${l}/${y}/${x}`,
-    credit: 'Imagery © Esri, Maxar, Earthstar Geographics',
-    backdrop: 'earth',
-    fill: 0.58,
-    stroke: 'rgba(255, 246, 225, 0.55)',
-    atmosphere: '#8fb8ff',
-  },
-  terrain: {
-    tiles: (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/${l}/${y}/${x}`,
-    maxLevel: 8,
-    backdrop: '#c9d4c0',
-    credit: 'Relief © Esri, US National Park Service',
-    fill: 0.6,
-    stroke: 'rgba(40, 30, 20, 0.55)',
-    atmosphere: '#a9c8ff',
-  },
-  atlas: {
-    tiles: (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${l}/${y}/${x}`,
-    maxLevel: 16,
-    backdrop: '#2a2c31',
-    credit: 'Basemap © Esri, HERE, Garmin',
-    fill: 0.76,
-    stroke: 'rgba(255, 250, 240, 0.7)',
-    atmosphere: '#e8c98a',
-  },
-  classic: {
-    tiles: null,
-    credit: 'NASA Blue Marble',
-    fill: 0.52,
-    stroke: 'rgba(255, 240, 210, 0.45)',
-    atmosphere: '#8fb8ff',
-  },
+// One globe, one basemap. Esri's World Imagery tile service is public and key-less, and its
+// low-zoom mosaic is smoothed for exactly this kind of whole-globe view, so nothing looks noisy.
+const BASEMAP = {
+  tiles: (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${l}/${y}/${x}`,
+  maxLevel: 17,
+  credit: 'Imagery © Esri, Maxar, Earthstar Geographics',
+  fill: 0.58,
+  stroke: 'rgba(255, 246, 225, 0.55)',
+  atmosphere: '#8fb8ff',
 };
 
 const $ = (id) => document.getElementById(id);
@@ -75,12 +65,15 @@ const state = {
   showLabels: true,
   playing: false,
   mode: store.get('mode', 'realms'),
-  style: store.get('style', 'satellite'),
   baseAltitude: 0.007,
 };
 
+// Anisotropic filtering keeps tiles crisp where the globe curves away from the camera.
+Texture.DEFAULT_ANISOTROPY = 8;
+
 const audio = createAmbience();
 const era = () => ERAS[state.eraIndex];
+const isPaleo = () => era().kind === 'paleo';
 const realmColor = (r) => (state.mode === 'empires' ? r.empireHsl : r.hsl);
 loadIndex().then((index) => (state.index = index));
 
@@ -93,7 +86,8 @@ const globe = new Globe($('globe'), { animateIn: true })
   .onGlobeReady(() => document.body.classList.add('globe-ready'))
   .globeOffset([0, 36])
   .polygonsTransitionDuration(450)
-  .polygonCapCurvatureResolution(3)
+  .globeCurvatureResolution(1.5)
+  .polygonCapCurvatureResolution(2)
   .polygonGeoJsonGeometry('geometry')
   .polygonLabel(({ __realm: r }) => {
     const lines = [
@@ -149,7 +143,8 @@ backdrop.rotation.y = -Math.PI / 2;
 new TextureLoader().load('/textures/earth-lowres.jpg', (tex) => {
   tex.colorSpace = SRGBColorSpace;
   backdrop.userData.texture = tex;
-  if (STYLES[state.style]?.backdrop === 'earth') backdrop.material.map = tex;
+  backdrop.material.map = tex;
+  backdrop.material.color.set('#ffffff');
   backdrop.material.needsUpdate = true;
 });
 globe.scene().add(backdrop);
@@ -178,22 +173,30 @@ globe.onZoom(({ altitude }) => {
 $('globe').addEventListener('pointerdown', () => setAutoRotate(false));
 window.addEventListener('resize', () => globe.width(innerWidth).height(innerHeight));
 
-function applyStyle(name) {
-  state.style = STYLES[name] ? name : 'satellite';
-  store.set('style', state.style);
-  const s = STYLES[state.style];
-  // Only the classic style needs the (large) static textures, so they're never fetched otherwise.
-  if (!s.tiles) globe.globeImageUrl('/textures/earth-blue-marble.jpg').bumpImageUrl('/textures/earth-topology.png');
-  backdrop.visible = !!s.tiles;
-  backdrop.material.map = s.backdrop === 'earth' ? backdrop.userData.texture || null : null;
-  backdrop.material.color.set(s.backdrop === 'earth' ? '#ffffff' : s.backdrop || '#000');
-  backdrop.material.needsUpdate = true;
-  globe.globeTileEngineMaxLevel(s.maxLevel || 17).globeTileEngineUrl(s.tiles).atmosphereColor(s.atmosphere);
-  document.body.dataset.style = state.style;
-  $('credits').textContent = `${s.credit} · Borders: historical-basemaps, Natural Earth`;
-  for (const b of $('style-switch').children) b.classList.toggle('active', b.dataset.style === state.style);
-  refreshPolygons();
-  refreshLabels();
+// Historical eras get the satellite basemap; deep-time ones get a bare coloured world.
+function applyScene(era) {
+  const scene = era.kind === 'paleo' ? SCENES.paleo : era.kind === 'cosmic' ? SCENES[era.scene] : null;
+  document.body.dataset.scene = scene ? era.scene || 'paleo' : '';
+
+  if (!scene) {
+    backdrop.visible = true;
+    backdrop.material.map = backdrop.userData.texture || null;
+    backdrop.material.color.set(backdrop.userData.texture ? '#ffffff' : '#0a1020');
+    backdrop.material.needsUpdate = true;
+    globe.globeTileEngineMaxLevel(BASEMAP.maxLevel).globeTileEngineUrl(BASEMAP.tiles).atmosphereColor(BASEMAP.atmosphere);
+    globe.showGlobe(true);
+    $('credits').textContent = `${BASEMAP.credit} · Borders: historical-basemaps, Natural Earth (India view)`;
+    return;
+  }
+
+  backdrop.visible = false;
+  globe.globeTileEngineUrl(null).atmosphereColor(scene.atmosphere);
+  globe.showGlobe(!!scene.globe);
+  if (scene.globe) material.color.set(scene.globe);
+  $('credits').textContent =
+    era.kind === 'paleo'
+      ? 'Plate reconstruction: GPlates Web Service, EarthByte, Merdith et al. 2021'
+      : 'An artist’s impression, drawn from current scientific consensus';
 }
 
 function applyMode(mode) {
@@ -205,7 +208,6 @@ function applyMode(mode) {
   renderPowers();
 }
 
-$('style-switch').addEventListener('click', (e) => e.target.dataset.style && applyStyle(e.target.dataset.style));
 $('mode-switch').addEventListener('click', (e) => e.target.dataset.mode && applyMode(e.target.dataset.mode));
 
 // ---------- Rendering ----------
@@ -213,21 +215,22 @@ $('mode-switch').addEventListener('click', (e) => e.target.dataset.mode && apply
 function refreshPolygons() {
   if (!state.data) return;
   const { hovered, selected, baseAltitude } = state;
-  const s = STYLES[state.style];
+  const s = BASEMAP;
   const lordOfSelected = selected && state.data.realms.get(selected)?.overlord;
   const inFocus = (r) => !selected || r.name === selected || r.overlord === selected || r.name === lordOfSelected;
 
   globe
     .polygonCapColor(({ __realm: r }) => {
+      if (isPaleo()) return r.name === hovered || r.name === selected ? '#e3d0a4' : SCENES.paleo.land;
       const c = realmColor(r);
       if (r.name === selected) return hsla(c, 0.88, 6);
       if (r.name === hovered) return hsla(c, Math.min(0.9, s.fill + 0.22), 6);
       const a = r.culture ? s.fill * 0.35 : s.fill;
       return hsla(c, inFocus(r) ? a : a * 0.35);
     })
-    .polygonSideColor(({ __realm: r }) => hsla(realmColor(r), r.name === selected ? 0.6 : 0.25, -12))
+    .polygonSideColor(({ __realm: r }) => (isPaleo() ? '#8a7448' : hsla(realmColor(r), r.name === selected ? 0.6 : 0.25, -12)))
     .polygonStrokeColor(({ __realm: r }) =>
-      r.name === selected ? 'rgba(255, 248, 225, 1)' : r.culture ? 'rgba(255, 246, 225, 0.18)' : s.stroke
+      isPaleo() ? 'rgba(90, 74, 44, 0.5)' : r.name === selected ? 'rgba(255, 248, 225, 1)' : r.culture ? 'rgba(255, 246, 225, 0.18)' : s.stroke
     )
     .polygonAltitude(({ __realm: r }) =>
       r.name === selected ? baseAltitude * 4 + 0.006 : r.name === hovered ? baseAltitude * 2.4 : baseAltitude * r.lift
@@ -237,7 +240,7 @@ function refreshPolygons() {
 function refreshLabels() {
   if (!state.data || !state.showLabels) return globe.labelsData([]);
   const modern = era().year >= 1800;
-  const color = state.style === 'atlas' ? 'rgba(255, 250, 240, 0.95)' : 'rgba(255, 246, 228, 0.92)';
+  const color = 'rgba(255, 246, 228, 0.92)';
   const labels = state.data.powers
     .filter((r) => r.name.length <= 30)
     .slice(0, modern ? 40 : 20)
@@ -301,7 +304,7 @@ function renderPowers() {
           </li>`
         )
         .join('')
-    : `<li class="empty">${data ? 'No realm by that name in this era.' : 'Loading…'}</li>`;
+    : `<li class="empty">${era().kind === 'cosmic' ? 'No maps yet. There is no land, and no one to draw them.' : data ? 'No realm by that name in this era.' : 'Loading…'}</li>`;
 }
 
 $('powers-list').addEventListener('click', (e) => {
@@ -420,6 +423,102 @@ function openChronicle(name = state.selected) {
 $('info-close').addEventListener('click', deselect);
 $('open-chronicle').addEventListener('click', () => openChronicle());
 
+// ---------- India through time ----------
+
+const INDIA_PLAY_MS = 12000;
+const india = { chapter: 0, playing: false, timer: null };
+const isIndiaOpen = () => document.body.classList.contains('india-open');
+
+function indiaRealmsOnMap(chapter) {
+  if (!state.data || era().year !== chapter.year) return [];
+  return state.data.ranked.filter((r) => !r.culture && inIndiaRegion(r) && r.km2 > 20000).slice(0, 8);
+}
+
+function renderIndia() {
+  $('india-list').innerHTML = INDIA_CHAPTERS.map((c, i) => {
+    if (i !== india.chapter) {
+      return `<li><button class="india-ch-head" data-chapter="${i}"><span class="india-year">${esc(formatYear(c.year))}</span><span class="india-title">${esc(c.title)}</span></button></li>`;
+    }
+    const realms = indiaRealmsOnMap(c);
+    const list = (items) => items.map((x) => `<li>${esc(x)}</li>`).join('');
+    return `<li class="open">
+      <button class="india-ch-head" data-chapter="${i}"><span class="india-year">${esc(formatYear(c.year))}</span><span class="india-title">${esc(c.title)}<small>${esc(c.span)}</small></span></button>
+      <div class="india-body">
+        <p>${esc(c.story)}</p>
+        <h5>Worth remembering</h5><ul>${list(c.remember)}</ul>
+        <h5>Questions worth asking</h5><ul class="india-ask">${list(c.ask)}</ul>
+        ${
+          realms.length
+            ? `<h5>On the map in ${esc(formatYear(c.year))}</h5><div class="chips">${realms
+                .map((r) => `<button class="chip" data-realm="${esc(r.name)}"><i style="background:${hsla(realmColor(r), 1)}"></i>${esc(r.name)}</button>`)
+                .join('')}</div>`
+            : ''
+        }
+        <button class="btn-primary wide" data-chronicle="${esc(c.realm)}">Read the full chronicle →</button>
+      </div>
+    </li>`;
+  }).join('');
+  $('india-progress').textContent = `${india.chapter + 1} / ${INDIA_CHAPTERS.length}`;
+  $('india-list').querySelector('li.open')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+async function goToChapter(i) {
+  india.chapter = clamp(i, 0, INDIA_CHAPTERS.length - 1);
+  const chapter = INDIA_CHAPTERS[india.chapter];
+  renderIndia();
+  setAutoRotate(false);
+  globe.pointOfView(INDIA_VIEW, 1600);
+  await setEra(ERAS.findIndex((e) => e.year === chapter.year));
+  if (INDIA_CHAPTERS[india.chapter] !== chapter || !isIndiaOpen()) return;
+  select(chapter.realm, { fly: false });
+  renderIndia();
+}
+
+function openIndia(i = india.chapter) {
+  setPlaying(false);
+  document.body.classList.add('india-open');
+  document.body.classList.remove('powers-open');
+  goToChapter(i);
+}
+
+function closeIndia() {
+  setIndiaPlaying(false);
+  document.body.classList.remove('india-open');
+}
+
+function setIndiaPlaying(on) {
+  india.playing = on;
+  $('india-play').textContent = on ? '❚❚ Pause' : '▶ Play story';
+  clearInterval(india.timer);
+  if (!on) return;
+  india.timer = setInterval(() => {
+    if (india.chapter >= INDIA_CHAPTERS.length - 1) return setIndiaPlaying(false);
+    goToChapter(india.chapter + 1);
+  }, INDIA_PLAY_MS);
+}
+
+const stepChapter = (d) => {
+  setIndiaPlaying(false);
+  goToChapter(india.chapter + d);
+};
+
+$('india-btn').addEventListener('click', () => (isIndiaOpen() ? closeIndia() : openIndia()));
+$('india-close').addEventListener('click', closeIndia);
+$('india-prev').addEventListener('click', () => stepChapter(-1));
+$('india-next').addEventListener('click', () => stepChapter(1));
+$('india-play').addEventListener('click', () => setIndiaPlaying(!india.playing));
+$('india-list').addEventListener('click', (e) => {
+  const chip = e.target.closest('[data-realm]');
+  if (chip) return select(chip.dataset.realm);
+  const chronicleBtn = e.target.closest('[data-chronicle]');
+  if (chronicleBtn) {
+    setIndiaPlaying(false);
+    return openChronicle(chronicleBtn.dataset.chronicle);
+  }
+  const head = e.target.closest('.india-ch-head');
+  if (head) stepChapter(Number(head.dataset.chapter) - india.chapter);
+});
+
 // ---------- Facts ----------
 
 let factIndex = 0;
@@ -452,7 +551,7 @@ const pct = (i) => (i / (ERAS.length - 1)) * 100;
 function buildTimeline() {
   $('ticks').innerHTML = ERAS.map((e, i) => {
     const major = TICK_LABELS.has(e.year);
-    const label = e.year === -1 ? 'AD 1' : formatYear(e.year).replace('AD ', '');
+    const label = shortYear(e.year);
     return `<div class="tick ${major ? 'major' : ''}" style="left:${pct(i)}%">${major ? `<label>${label}</label>` : ''}</div>`;
   }).join('');
 
@@ -473,6 +572,8 @@ function showEraUI(i) {
     yearEl.classList.add('changing');
     setTimeout(() => {
       yearEl.textContent = formatYear(e.year);
+      // "13.8 billion years ago" needs far less type than "AD 100".
+      yearEl.classList.toggle('long', !!e.kind);
       yearEl.dataset.year = e.year;
       yearEl.classList.remove('changing');
     }, 200);
@@ -499,7 +600,7 @@ track.addEventListener('pointermove', (e) => {
   const i = indexFromX(e.clientX);
   const tip = $('track-tip');
   tip.style.left = `${pct(i)}%`;
-  tip.querySelector('b').textContent = formatYear(ERAS[i].year);
+  tip.querySelector('b').textContent = shortYear(ERAS[i].year);
   tip.querySelector('span').textContent = ERAS[i].caption;
   tip.classList.add('show');
   if (dragIndex === null) return;
@@ -519,25 +620,41 @@ let loadToken = 0;
 
 async function setEra(i) {
   i = clamp(i, 0, ERAS.length - 1);
+  const era = ERAS[i];
   const changed = i !== state.eraIndex || !state.data;
   state.eraIndex = i;
   showEraUI(i);
-  history.replaceState(null, '', `#${ERAS[i].year}`);
+  history.replaceState(null, '', `#${era.year}`);
   if (changed) {
-    audio.setAge(ageOf(ERAS[i].year).name);
+    audio.setAge(ageOf(era.year).name);
     audio.whoosh();
     showFact(0);
   }
+  applyScene(era);
 
   const token = ++loadToken;
+
+  // The cosmic moments predate any map, so there is nothing to load or draw.
+  if (era.kind === 'cosmic') {
+    deselect();
+    state.data = null;
+    globe.polygonsData([]).labelsData([]);
+    renderPowers();
+    $('loader').classList.remove('show');
+    if (state.playing) schedulePlay();
+    return;
+  }
+
   const loaderTimer = setTimeout(() => $('loader').classList.add('show'), 150);
   try {
-    const data = await loadEra(ERAS[i].year);
+    const data = await loadEra(era.year);
     if (token !== loadToken) return;
     render(data);
-    [i + 1, i - 1, i + 2].filter((j) => ERAS[j]).forEach((j) => loadEra(ERAS[j].year).catch(() => {}));
+    [i + 1, i - 1, i + 2]
+      .filter((j) => ERAS[j] && ERAS[j].kind !== 'cosmic')
+      .forEach((j) => loadEra(ERAS[j].year).catch(() => {}));
   } catch {
-    if (token === loadToken) $('era-caption').textContent = 'These borders could not be loaded — check your connection.';
+    if (token === loadToken) $('era-caption').textContent = 'These borders could not be loaded. Check your connection.';
   } finally {
     clearTimeout(loaderTimer);
     if (token === loadToken) $('loader').classList.remove('show');
@@ -564,6 +681,7 @@ function setPlaying(on) {
   $('play').classList.toggle('on', on);
   clearTimeout(playTimer);
   if (on) {
+    closeIndia();
     deselect();
     if (state.eraIndex >= ERAS.length - 1) setEra(0);
     else schedulePlay();
@@ -615,12 +733,14 @@ window.addEventListener('keydown', (e) => {
     if ($('lightbox').classList.contains('open')) $('lightbox').classList.remove('open');
     else if ($('help').classList.contains('open')) $('help').classList.remove('open');
     else if (chronicle.isOpen) chronicle.close();
-    else deselect();
+    else if (state.selected) deselect();
+    else if (isIndiaOpen()) closeIndia();
     return;
   }
   if (chronicle.isOpen) return;
-  if (e.key === 'ArrowRight') setEra(state.eraIndex + 1);
-  else if (e.key === 'ArrowLeft') setEra(state.eraIndex - 1);
+  if (e.key === 'ArrowRight') isIndiaOpen() ? stepChapter(1) : setEra(state.eraIndex + 1);
+  else if (e.key === 'ArrowLeft') isIndiaOpen() ? stepChapter(-1) : setEra(state.eraIndex - 1);
+  else if (key === 'i') isIndiaOpen() ? closeIndia() : openIndia();
   else if (e.key === 'Enter') openChronicle();
   else if (e.key === ' ') {
     e.preventDefault();
@@ -638,10 +758,56 @@ window.addEventListener('keydown', (e) => {
 
 // ---------- Intro & boot ----------
 
+// Public-domain artworks from Wikimedia Commons, bundled in /public/intro.
+const INTRO_ART = [
+  { src: '/intro/taj.jpg', theme: 'india', caption: 'Thomas Daniell, Gateway to the Taj Mahal, 1796' },
+  { src: '/intro/empire.jpg', theme: 'rome', caption: 'Thomas Cole, The Consummation of Empire, 1836' },
+  { src: '/intro/qingming.jpg', theme: 'china', caption: 'Zhang Zeduan, Along the River During the Qingming Festival, 12th century' },
+  { src: '/intro/ajanta.jpg', theme: 'india', caption: 'Bodhisattva Padmapani, Ajanta Cave 1, 5th century', pos: 'center 30%' },
+  { src: '/intro/sphinx.jpg', theme: 'egypt', caption: 'Louis Haghe after David Roberts, The Great Sphinx at Giza, 1840s' },
+  { src: '/intro/athens.jpg', theme: 'rome', caption: 'Raphael, The School of Athens, 1511' },
+  { src: '/intro/wave.jpg', theme: 'japan', caption: 'Katsushika Hokusai, The Great Wave off Kanagawa, c. 1831' },
+  { src: '/intro/mercator.jpg', theme: 'europe', caption: 'Gerardus Mercator, world map, 1569' },
+];
+
+const INTRO_SLIDE_MS = 7000;
+
+function startIntroArt() {
+  const slides = document.querySelectorAll('.intro-slide');
+  let next = 0;
+  let front = 0;
+  const show = () => {
+    const art = INTRO_ART[next++ % INTRO_ART.length];
+    const img = new Image();
+    img.onload = () => {
+      const el = slides[front];
+      el.style.backgroundImage = `url("${art.src}")`;
+      el.style.backgroundPosition = art.pos || 'center';
+      el.classList.remove('on');
+      void el.offsetWidth;
+      el.classList.add('on');
+      slides[1 - front].classList.remove('on');
+      front = 1 - front;
+      $('intro-caption').textContent = art.caption;
+    };
+    img.src = art.src;
+    audio.setTheme(art.theme);
+  };
+  show();
+  // Browsers only allow sound after a gesture, so the score starts on the first touch or key.
+  const unlock = () => {
+    if (document.body.classList.contains('intro-open')) setSound(true);
+  };
+  $('intro').addEventListener('pointerdown', unlock, { once: true });
+  window.addEventListener('keydown', unlock, { once: true });
+  const timer = setInterval(() => (document.body.classList.contains('intro-open') ? show() : clearInterval(timer)), INTRO_SLIDE_MS);
+}
+startIntroArt();
+
 function enter(withMusic) {
   document.body.classList.remove('intro-open');
   setSound(withMusic);
-  setTimeout(() => $('intro').remove(), 1200);
+  setTimeout(() => $('intro')?.remove(), 1200);
 }
 
 $('begin').addEventListener('click', () => enter(true));
@@ -649,13 +815,17 @@ $('begin-silent').addEventListener('click', () => enter(false));
 
 const params = new URLSearchParams(location.search);
 performance.mark("t-globe"); buildTimeline();
-applyStyle(params.get('style') || state.style);
+applyScene(era());
 applyMode(params.get('mode') || state.mode);
 const fromHash = ERAS.findIndex((e) => String(e.year) === location.hash.slice(1));
 if (params.has('skipintro')) enter(false);
 // Building hundreds of polygon meshes blocks a frame, so let the page and bare globe paint first.
 const afterFirstPaint = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r))));
 afterFirstPaint().then(() => setEra(fromHash >= 0 ? fromHash : state.eraIndex)).then(() => {
+  if (params.has('india')) {
+    enter(false);
+    return openIndia(Number(params.get('india')) || 0);
+  }
   const realm = params.get('realm');
   if (!realm) return;
   select(realm);
@@ -669,7 +839,8 @@ afterFirstPaint().then(() => setEra(fromHash >= 0 ? fromHash : state.eraIndex)).
 // here: the globe renders every frame, so the browser never reports itself idle.
 function precacheEras() {
   if (navigator.connection?.saveData) return;
-  const queue = ERAS.map((e, i) => ({ url: dataUrl(e.year), d: Math.abs(i - state.eraIndex) }))
+  const queue = ERAS.filter((e) => e.kind !== 'cosmic')
+    .map((e, i) => ({ url: dataUrl(e.year), d: Math.abs(i - state.eraIndex) }))
     .sort((a, b) => a.d - b.d)
     .map((q) => q.url);
   const worker = () => {

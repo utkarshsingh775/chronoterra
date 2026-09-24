@@ -115,7 +115,7 @@ export function createChronicle({ onJump, onOpenRealm, onShowOnGlobe, onClose })
       ['Territory', fmtArea(realm.km2)],
       ['Share of Earth’s land', share >= 0.1 ? `${share.toFixed(1)}%` : '< 0.1%'],
       realm.rank ? ['Rank this era', `#${realm.rank} of ${data.powers.length}`] : ['Type', 'Culture / people'],
-      years.length ? ['On the map', `${formatYear(years[0])} – ${formatYear(years[years.length - 1])}`] : null,
+      years.length ? ['On the map', `${formatYear(years[0])} to ${formatYear(years[years.length - 1])}`] : null,
       realm.overlord ? ['Subject of', realm.overlord] : subjects.length ? ['Subject realms', String(subjects.length)] : null,
     ].filter(Boolean);
 

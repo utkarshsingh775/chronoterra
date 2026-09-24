@@ -1,6 +1,6 @@
-// Chronoterra service worker: precaches the app shell and caches everything else on first use,
-// so revisits (and every era already seen) load instantly — even offline.
-const VERSION = 'v2';
+// Age of Empires service worker: precaches the app shell and caches everything else on first use,
+// so revisits (and every era already seen) load instantly, even offline.
+const VERSION = 'v6';
 const CORE = `core-${VERSION}`;
 const STATIC = `static-${VERSION}`;
 const TILES = `tiles-${VERSION}`;
@@ -9,7 +9,7 @@ const KEEP = [CORE, STATIC, TILES, WIKI];
 const MAX_TILES = 2500;
 const MAX_WIKI = 400;
 
-const PRECACHE = ['/', '/data/index.json', '/data/world_100.topo.json', '/textures/earth-lowres.jpg'];
+const PRECACHE = ['/', '/data/index.json', '/data/world_100.topo.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -88,7 +88,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith('/assets/')) return event.respondWith(cacheFirst(request, STATIC));
     if (url.pathname.startsWith('/fonts/')) return event.respondWith(cacheFirst(request, STATIC));
-    if (url.pathname.startsWith('/data/') || url.pathname.startsWith('/textures/'))
+    if (url.pathname.startsWith('/data/') || url.pathname.startsWith('/textures/') || url.pathname.startsWith('/intro/'))
       return event.respondWith(staleWhileRevalidate(request, STATIC, event));
     return;
   }

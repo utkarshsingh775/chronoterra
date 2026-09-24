@@ -1,17 +1,201 @@
+// Before the first human map there is deep time. Two kinds of moment live here:
+// `cosmic` ones have no map at all, and `paleo` ones use real plate reconstructions
+// (GPlates, Merdith et al. 2021) drawn as bare land on an empty ocean.
+export const DEEP_ERAS = [
+  {
+    year: -13_800_000_000,
+    kind: 'cosmic',
+    label: '13.8 billion years ago',
+    scene: 'bigbang',
+    caption: 'The Big Bang, when space itself begins',
+    facts: [
+      'Everything we can see was once packed into a space smaller than an atom.',
+      'Within three minutes the first hydrogen and helium nuclei had formed.',
+      'For 380,000 years the universe was too hot for light to travel freely. That first light still reaches us as a faint radio glow.',
+    ],
+  },
+  {
+    year: -4_540_000_000,
+    kind: 'cosmic',
+    label: '4.54 billion years ago',
+    scene: 'molten',
+    caption: 'Earth forms from dust around a young Sun',
+    facts: [
+      'Earth grew out of a disc of dust and rock circling the new Sun.',
+      'The surface was a sea of magma, with no ocean and no air we could breathe.',
+      'Days lasted only about six hours, because the young Earth spun much faster.',
+    ],
+  },
+  {
+    year: -4_510_000_000,
+    kind: 'cosmic',
+    label: '4.51 billion years ago',
+    scene: 'moon',
+    caption: 'A Mars-sized world strikes Earth and the Moon is born',
+    facts: [
+      'A protoplanet often called Theia hit the young Earth and the debris became the Moon.',
+      'The Moon formed far closer than today and has been drifting away ever since, about 3.8 cm a year.',
+      'That impact tilted Earth, which is why we have seasons.',
+    ],
+  },
+  {
+    year: -3_700_000_000,
+    kind: 'cosmic',
+    label: '3.7 billion years ago',
+    scene: 'ocean',
+    caption: 'Oceans cover the world and the first life appears',
+    facts: [
+      'The oldest widely accepted traces of life are about 3.5 billion years old.',
+      'Early life was single-celled and needed no oxygen at all.',
+      'The sky was probably orange, with almost no free oxygen in the air.',
+    ],
+  },
+  {
+    year: -2_400_000_000,
+    kind: 'cosmic',
+    label: '2.4 billion years ago',
+    scene: 'oxygen',
+    caption: 'Cyanobacteria fill the air with oxygen',
+    facts: [
+      'Photosynthesis released so much oxygen that it poisoned most life of the time.',
+      'Dissolved iron rusted out of the seas and settled as the banded iron we still mine today.',
+      'This Great Oxidation Event made all later animal life possible.',
+    ],
+  },
+  {
+    year: -600_000_000,
+    kind: 'paleo',
+    key: 'ma600',
+    land: 'Pannotia',
+    label: '600 million years ago',
+    caption: 'Pannotia breaks apart and the first animals appear',
+    facts: [
+      'The strange soft-bodied Ediacaran creatures were the first complex animals.',
+      'Earth had recently thawed from a deep freeze some call Snowball Earth.',
+      'All life still lived in the sea. The land was bare rock.',
+    ],
+  },
+  {
+    year: -500_000_000,
+    kind: 'paleo',
+    key: 'ma500',
+    land: 'Gondwana',
+    label: '500 million years ago',
+    caption: 'The Cambrian explosion fills the seas',
+    facts: [
+      'Almost every major animal body plan alive today appeared in this burst of evolution.',
+      'Trilobites were among the most successful animals on Earth.',
+      'The giant southern continent Gondwana held today’s Africa, South America, India, Antarctica and Australia.',
+    ],
+  },
+  {
+    year: -400_000_000,
+    kind: 'paleo',
+    key: 'ma400',
+    land: 'Laurussia',
+    label: '400 million years ago',
+    caption: 'Plants and animals move onto land',
+    facts: [
+      'The first forests were spreading, and they pulled huge amounts of carbon out of the air.',
+      'Fish with sturdy fins were beginning to crawl into shallow water.',
+      'Insects appeared, long before any animal with a backbone walked on land.',
+    ],
+  },
+  {
+    year: -300_000_000,
+    kind: 'paleo',
+    key: 'ma300',
+    land: 'Pangaea',
+    label: '300 million years ago',
+    caption: 'All land joins into one supercontinent, Pangaea',
+    facts: [
+      'You could have walked from what is now South Africa to what is now Canada.',
+      'Swampy coal forests of this age became most of the coal we burn today.',
+      'Oxygen levels were so high that dragonflies grew wings the width of a seagull’s.',
+    ],
+  },
+  {
+    year: -200_000_000,
+    kind: 'paleo',
+    key: 'ma200',
+    land: 'Pangaea',
+    label: '200 million years ago',
+    caption: 'Pangaea begins to split and dinosaurs spread',
+    facts: [
+      'Rifts tore Pangaea apart and the Atlantic Ocean started to open.',
+      'Dinosaurs were becoming the dominant land animals.',
+      'The first small mammals were alive, mostly no bigger than a mouse.',
+    ],
+  },
+  {
+    year: -100_000_000,
+    kind: 'paleo',
+    key: 'ma100',
+    land: 'Gondwana',
+    label: '100 million years ago',
+    caption: 'A warm, high-sea world of flowering plants',
+    facts: [
+      'There was no ice at either pole and shallow seas flooded the continents.',
+      'Flowering plants were spreading fast, and insects spread with them.',
+      'India had broken away and was drifting north as an island continent.',
+    ],
+  },
+  {
+    year: -66_000_000,
+    kind: 'paleo',
+    key: 'ma66',
+    land: 'Laurasia',
+    label: '66 million years ago',
+    caption: 'An asteroid ends the age of dinosaurs',
+    facts: [
+      'A roughly 10 km asteroid struck what is now the Yucatán in Mexico.',
+      'About three quarters of all species died out, including every large dinosaur.',
+      'Birds are the one dinosaur lineage that survived, and they are still with us.',
+    ],
+  },
+  {
+    year: -35_000_000,
+    kind: 'paleo',
+    key: 'ma35',
+    land: 'Laurasia',
+    label: '35 million years ago',
+    caption: 'India crashes into Asia and the Himalayas rise',
+    facts: [
+      'India had crossed an entire ocean before colliding with Asia.',
+      'That collision is still going on, and Everest grows by a few millimetres a year.',
+      'Antarctica froze over as the oceans around it began to circulate.',
+    ],
+  },
+  {
+    year: -5_000_000,
+    kind: 'paleo',
+    key: 'ma5',
+    land: 'Earth',
+    label: '5 million years ago',
+    caption: 'A familiar world, and the first upright apes',
+    facts: [
+      'The continents had almost reached the positions we know today.',
+      'Early hominins in Africa were already walking upright.',
+      'The Isthmus of Panama was closing, joining North and South America.',
+    ],
+  },
+];
+
 export const ERAS = [
-  { year: -123000, caption: 'The last interglacial — humans spread across Africa', facts: [
-    'The Eemian interglacial was warmer than today — hippos wallowed where London’s Trafalgar Square now stands.',
+  ...DEEP_ERAS,
+  { year: -123000, caption: 'The last interglacial, as humans spread across Africa', facts: [
+    'The Eemian interglacial was warmer than today. Hippos wallowed where London’s Trafalgar Square now stands.',
     'Neanderthals ruled Ice Age Europe while Denisovans roamed Asia.',
     'Every human alive today descends from small bands of Homo sapiens living in Africa.',
   ] },
   { year: -10000, caption: 'End of the Ice Age', facts: [
     'Britain was still joined to Europe by Doggerland, a lowland now under the North Sea.',
-    'Göbekli Tepe in Anatolia — possibly the world’s oldest monumental site — was being raised by hunter-gatherers.',
+    'Göbekli Tepe in Anatolia, possibly the world’s oldest monumental site, was being raised by hunter-gatherers.',
     'The entire human population is estimated at just a few million people.',
   ] },
   { year: -8000, caption: 'The first farmers of the Fertile Crescent', facts: [
     'Wheat, barley, peas and lentils were among humanity’s very first crops.',
-    'Jericho already had a stone wall and an 8-metre tower — one of the oldest known.',
+    'Jericho already had a stone wall and an 8-metre tower, one of the oldest known.',
     'The Sahara was green, dotted with lakes and home to giraffes and hippos.',
   ] },
   { year: -5000, caption: 'Neolithic villages across Eurasia', facts: [
@@ -25,7 +209,7 @@ export const ERAS = [
     'Megalithic tombs were being raised all along Europe’s Atlantic coast.',
   ] },
   { year: -3000, caption: 'Egypt unified; Sumerian city-states rise', facts: [
-    'Writing had just been invented — cuneiform in Sumer and hieroglyphs in Egypt.',
+    'Writing had just been invented: cuneiform in Sumer and hieroglyphs in Egypt.',
     'The first phase of Stonehenge, a circular ditch and bank, was dug around this time.',
     'Tradition credits King Narmer with uniting Upper and Lower Egypt.',
   ] },
@@ -36,7 +220,7 @@ export const ERAS = [
   ] },
   { year: -1500, caption: 'New Kingdom Egypt, Hittites, and Shang China', facts: [
     'Hatshepsut would soon rule Egypt as one of its few female pharaohs.',
-    'Shang kings would carve questions to their ancestors on oracle bones — China’s earliest writing.',
+    'Shang kings would carve questions to their ancestors on oracle bones, China’s earliest writing.',
     'The volcano of Thera had recently buried the Minoan town of Akrotiri in ash.',
   ] },
   { year: -1000, caption: 'Zhou dynasty; the Iron Age begins', facts: [
@@ -61,11 +245,11 @@ export const ERAS = [
   ] },
   { year: -323, caption: 'Death of Alexander the Great', facts: [
     'Alexander died in Babylon aged 32, having never lost a battle.',
-    'He founded many cities named Alexandria — the Egyptian one became the greatest.',
+    'He founded many cities named Alexandria. The Egyptian one became the greatest.',
     'Chandragupta Maurya was about to forge India’s first great empire.',
   ] },
   { year: -300, caption: 'The Hellenistic kingdoms and the Mauryas', facts: [
-    'Euclid wrote his Elements in Alexandria — used as a textbook for over 2,000 years.',
+    'Euclid wrote his Elements in Alexandria, used as a textbook for over 2,000 years.',
     'The Library of Alexandria was being founded under the Ptolemies.',
     'The Lighthouse of Alexandria would soon rise over 100 metres.',
   ] },
@@ -77,7 +261,7 @@ export const ERAS = [
   { year: -100, caption: 'The Roman Republic expands', facts: [
     'Julius Caesar was born in 100 BC.',
     'Han envoys had opened the routes later called the Silk Road.',
-    'The Antikythera mechanism — an ancient analogue computer — dates from around this time.',
+    'The Antikythera mechanism, an ancient analogue computer, dates from around this time.',
   ] },
   { year: -1, caption: 'Augustus rules Rome; the Han rule China', facts: [
     'There is no year zero: 1 BC is followed directly by AD 1.',
@@ -95,13 +279,13 @@ export const ERAS = [
     'Aksum in Ethiopia was becoming one of the great trading powers of the world.',
   ] },
   { year: 300, caption: 'The Tetrarchy and the Sasanian Empire', facts: [
-    'Diocletian split rule of Rome between four emperors — the Tetrarchy.',
+    'Diocletian split rule of Rome between four emperors, called the Tetrarchy.',
     'Constantine legalised Christianity in 313.',
     'Classic Maya cities like Tikal were flourishing in the jungles of Central America.',
   ] },
   { year: 400, caption: 'The Gupta golden age', facts: [
-    'The Visigoths sacked Rome in 410 — the first time in 800 years.',
-    'Indian mathematicians were developing place-value numerals — the ancestors of our digits.',
+    'The Visigoths sacked Rome in 410, the first time in 800 years.',
+    'Indian mathematicians were developing place-value numerals, the ancestors of our digits.',
     'Polynesian voyagers were pushing east towards Hawaiʻi and Rapa Nui.',
   ] },
   { year: 500, caption: 'The fall of the West; Byzantium endures', facts: [
@@ -130,7 +314,7 @@ export const ERAS = [
     'Many great Maya cities of the southern lowlands had been abandoned.',
   ] },
   { year: 1000, caption: 'The Song dynasty and the Holy Roman Empire', facts: [
-    'Leif Erikson reached North America around 1000 — nearly 500 years before Columbus.',
+    'Leif Erikson reached North America around 1000, nearly 500 years before Columbus.',
     'Murasaki Shikibu was writing The Tale of Genji, often called the first novel.',
     'Song China would soon record the first known formulas for gunpowder.',
   ] },
@@ -151,7 +335,7 @@ export const ERAS = [
   ] },
   { year: 1300, caption: 'The Mongol khanates divide Eurasia', facts: [
     'The Ottoman state was founded in Anatolia around 1299.',
-    'Mansa Musa of Mali — perhaps the richest person in history — made his famous hajj in 1324.',
+    'Mansa Musa of Mali, perhaps the richest person in history, made his famous hajj in 1324.',
     'Dante was writing the Divine Comedy.',
   ] },
   { year: 1400, caption: 'Ming China and the Timurids', facts: [
@@ -161,7 +345,7 @@ export const ERAS = [
   ] },
   { year: 1492, caption: 'Columbus reaches the Americas', facts: [
     'Granada fell in January 1492, ending Muslim rule in Iberia.',
-    'The oldest surviving globe, the Erdapfel, was made this year — without the Americas.',
+    'The oldest surviving globe, the Erdapfel, was made this year, without the Americas.',
     'Tenochtitlan was one of the largest cities on Earth.',
   ] },
   { year: 1500, caption: 'The Inca, the Aztecs, and the Ottomans', facts: [
@@ -190,7 +374,7 @@ export const ERAS = [
     'Louis XIV’s Versailles was the envy of every court in Europe.',
   ] },
   { year: 1715, caption: 'After the War of the Spanish Succession', facts: [
-    'Louis XIV died in 1715 after 72 years on the throne — the longest reign of any major European monarch.',
+    'Louis XIV died in 1715 after 72 years on the throne, the longest reign of any major European monarch.',
     'The Treaty of Utrecht (1713) handed Gibraltar to Britain.',
     'The Kangxi Emperor presided over a golden age in Qing China.',
   ] },
@@ -250,7 +434,7 @@ export const ERAS = [
     'Atomic bombs destroyed Hiroshima and Nagasaki in August.',
   ] },
   { year: 1960, caption: 'Decolonization sweeps Africa and Asia', facts: [
-    'Seventeen African countries became independent in 1960 — “the Year of Africa”.',
+    'Seventeen African countries became independent in 1960, “the Year of Africa”.',
     'Yuri Gagarin would become the first human in space the following year.',
     'World population was about 3 billion.',
   ] },
@@ -269,7 +453,7 @@ export const ERAS = [
     'The Burj Khalifa, at 828 m, opened in 2010.',
     'Roughly 30% of humanity was online.',
   ] },
-  { year: 2024, label: 'Today', source: 'naturalearth', caption: 'The world today — detailed modern borders', facts: [
+  { year: 2024, label: 'Today', source: 'naturalearth', caption: 'The world today, with detailed modern borders', facts: [
     'There are 193 member states of the United Nations.',
     'World population passed 8 billion in November 2022.',
     'Russia is the largest country on Earth, at over 17 million km².',
@@ -277,7 +461,8 @@ export const ERAS = [
 ];
 
 export const AGES = [
-  { name: 'Prehistory', from: -Infinity, to: -3001 },
+  { name: 'Deep Time', from: -Infinity, to: -1000000 },
+  { name: 'Prehistory', from: -999999, to: -3001 },
   { name: 'Ancient', from: -3000, to: 499 },
   { name: 'Medieval', from: 500, to: 1491 },
   { name: 'Early Modern', from: 1492, to: 1799 },
@@ -292,6 +477,21 @@ export const formatYear = (year) => {
   return year < 0 ? `${Math.abs(year).toLocaleString('en-US')} BC` : `AD ${year}`;
 };
 
-export const eraKey = (year) => (year === 2024 ? 'today' : year < 0 ? `bc${Math.abs(year)}` : String(year));
+// Short form for the timeline ruler, where "13.8 billion years ago" will not fit.
+export const shortYear = (year) => {
+  const era = ERAS.find((e) => e.year === year);
+  if (era?.kind) {
+    const ago = Math.abs(year);
+    return ago >= 1e9 ? `${+(ago / 1e9).toFixed(2)} Ga` : `${Math.round(ago / 1e6)} Ma`;
+  }
+  if (era?.label) return era.label;
+  return year === -1 ? 'AD 1' : year < 0 ? `${Math.abs(year).toLocaleString('en-US')} BC` : String(year);
+};
+
+export const eraKey = (year) => {
+  const era = ERAS.find((e) => e.year === year);
+  if (era?.key) return era.key;
+  return year === 2024 ? 'today' : year < 0 ? `bc${Math.abs(year)}` : String(year);
+};
 
 export const dataUrl = (year) => `/data/world_${eraKey(year)}.topo.json`;

@@ -1,6 +1,17 @@
 // A generative ambient score: slow evolving pads, a low drone, wind, and sparse bells.
 // Each age of history gets its own scale and chord progression.
 
+// Scales borrowed from the musical tradition each painting belongs to, so the intro score
+// shifts with the artwork on screen. Nothing is sampled; every note is synthesised here.
+export const THEMES = {
+  india: { root: 38, scale: [0, 1, 4, 5, 7, 8, 11], chords: [[0, 7, 12], [1, 8, 16], [-1, 7, 11], [0, 5, 12]], bellEvery: 3.6, wind: 0.02 },
+  china: { root: 40, scale: [0, 2, 4, 7, 9], chords: [[0, 7, 14], [2, 9, 16], [-3, 4, 11], [-5, 2, 9]], bellEvery: 3.4, wind: 0.02 },
+  japan: { root: 38, scale: [0, 1, 5, 7, 8], chords: [[0, 7, 12], [-4, 1, 8], [0, 5, 13], [-5, 2, 7]], bellEvery: 4.2, wind: 0.05 },
+  egypt: { root: 41, scale: [0, 1, 4, 5, 7, 8, 10], chords: [[0, 7, 13], [1, 8, 12], [-2, 5, 10], [-4, 3, 8]], bellEvery: 4, wind: 0.045 },
+  rome: { root: 40, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 7, 15], [-4, 3, 12], [5, 12, 20], [-2, 5, 14]], bellEvery: 3.8, wind: 0.025 },
+  europe: { root: 41, scale: [0, 2, 4, 5, 7, 9, 11], chords: [[0, 7, 16], [-3, 4, 12], [2, 9, 17], [-5, 2, 11]], bellEvery: 3.5, wind: 0.02 },
+};
+
 const MOODS = {
   Prehistory: { root: 38, scale: [0, 3, 5, 7, 10], chords: [[0, 7, 12], [-2, 5, 10], [-4, 3, 8], [-5, 2, 7]], bellEvery: 7, wind: 0.05 },
   Ancient: { root: 40, scale: [0, 1, 4, 5, 7, 8, 10], chords: [[0, 7, 16], [1, 8, 13], [-2, 5, 10], [-4, 4, 11]], bellEvery: 4.5, wind: 0.03 },
@@ -91,8 +102,11 @@ export function createAmbience() {
   // While the context is suspended its clock is frozen, so anything scheduled would pile up and fire at once on resume.
   const running = () => ctx.state === 'running' && !muted;
 
+  let chordTimer = null;
+
   function playChord() {
-    setTimeout(playChord, CHORD_SECONDS * 1000);
+    clearTimeout(chordTimer);
+    chordTimer = setTimeout(playChord, CHORD_SECONDS * 1000);
     if (!running()) return;
     const t = ctx.currentTime;
     const chord = mood.chords[chordIndex++ % mood.chords.length];
@@ -189,6 +203,17 @@ export function createAmbience() {
     setAge(age) {
       mood = MOODS[age] || mood;
       if (windGain) windGain.gain.setTargetAtTime(mood.wind, ctx.currentTime, 3);
+    },
+    // Used by the opening slideshow: each painting brings its own scale, starting straight away
+    // so the music crossfades with the picture instead of trailing it.
+    setTheme(name) {
+      const next = THEMES[name];
+      if (!next || next === mood) return;
+      mood = next;
+      if (!ctx) return;
+      windGain.gain.setTargetAtTime(mood.wind, ctx.currentTime, 3);
+      chordIndex = 0;
+      playChord();
     },
     // A soft rising shimmer when travelling to another era.
     whoosh() {

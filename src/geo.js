@@ -31,7 +31,7 @@ export const canonicalName = (name) => SAME_REALM[name] || name;
 
 // d3 (and the globe's polygon triangulation, which relies on d3's containment test) treats a
 // clockwise ring as "the whole sphere minus this shape". Many source polygons are wound that way,
-// which makes them vanish on the globe — so each polygon part is re-wound when it covers > half the sphere.
+// which makes them vanish on the globe, so each polygon part is re-wound when it covers > half the sphere.
 function rewindPolygon(rings) {
   return geoArea({ type: 'Polygon', coordinates: rings }) > 2 * Math.PI ? rings.map((r) => [...r].reverse()) : rings;
 }
